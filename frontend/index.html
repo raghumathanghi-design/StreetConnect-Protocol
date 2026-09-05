@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreetConnect | Final Prototype</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --danger: #ef4444; --success: #22c55e; --warning: #f59e0b; --purple: #8b5cf6; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; }
+        header { background-color: var(--primary); color: white; padding: 1.5rem; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+        
+        /* Login Screen */
+        #profile-section { background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; text-align: center; }
+        input, select { padding: 0.75rem; margin: 0.5rem 0; width: 90%; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1rem; }
+        
+        /* Dashboard & Tabs */
+        #app-content { display: none; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 2rem; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .tab-btn { flex: 1; padding: 0.75rem; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; background: #e2e8f0; color: #475569; min-width: 120px; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-btn[data-tab="special"].active { background: var(--purple); color: white; }
+        .tab-btn[data-tab="analytics"].active { background: #334155; color: white; }
+        
+        /* Cards & Grid */
+        .grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .request-card { background: var(--card); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; }
+        .request-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin: 1rem 0; background: #eee; }
+        .location { font-size: 1.25rem; font-weight: bold; color: var(--primary); }
+        
+        /* Badges & Buttons */
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; }
+        .badge.proximity { background: var(--success); color: white; }
+        .badge.priority { background: var(--purple); color: white; }
+        
+        .btn { padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; color: white; text-decoration: none; display: block; text-align: center; }
+        .btn-main { background: var(--primary); font-size: 1.1rem; }
+        .btn-maps { background: #ea4335; margin-bottom: 10px; }
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); color: black; }
+        
+        /* Analytics Area */
+        #analytics-view { display: none; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .chart-container { width: 100%; max-width: 500px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>StreetConnect Protocol</h1>
+        <p>Intelligent Surplus Distribution & Sheltering Network</p>
+    </header>
+
+    <div class="container">
+        <div id="profile-section">
+            <h2>System Login</h2>
+            <select id="user-type">
+                <option value="Donor">Individual Donor</option>
+                <option value="NGO">NGO Representative</option>
+            </select>
+            <input type="text" id="user-name" placeholder="Enter your Name" required>
+            
+            <p style="text-align: left; margin-bottom: 0; font-weight: bold; font-size: 0.9em; color: #64748b;">Select your base location (Proximity Matching):</p>
+            <select id="user-location">
+                <option value="Electronic City Phase 1">Electronic City Phase 1</option>
+                <option value="Electronic City Phase 2">Electronic City Phase 2</option>
+                <option value="Chandapura Circle">Chandapura Circle</option>
+                <option value="Bommasandra Industrial Area">Bommasandra Industrial Area</option>
+                <option value="Silk Board Junction">Silk Board Junction</option>
+                <option value="Koramangala BDA Complex">Koramangala BDA Complex</option>
+                <option value="HSR Layout Sector 1">HSR Layout Sector 1</option>
+                <option value="Madiwala Market">Madiwala Market</option>
+                <option value="Attibele Toll Plaza">Attibele Toll Plaza</option>
+                <option value="Jigani APC Circle">Jigani APC Circle</option>
+            </select>
+            
+            <button id="start-btn" class="btn btn-main" style="margin-top: 20px;">Initialize Dashboard</button>
+        </div>
+
+        <div id="app-content">
+            <h3 id="welcome-msg" style="text-align: center; color: var(--primary);"></h3>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="pending" onclick="switchTab('pending')">🚨 New Requests</button>
+                <button class="tab-btn" data-tab="accepted" onclick="switchTab('accepted')">⏳ Accepted (In Transit)</button>
+                <button class="tab-btn" data-tab="delivered" onclick="switchTab('delivered')">✅ Delivered</button>
+                <button class="tab-btn" data-tab="special" onclick="switchTab('special')">⭐ Special Care (Shelter)</button>
+                <button class="tab-btn" data-tab="history" id="history-tab" onclick="switchTab('history')" style="display:none;">📜 My History</button>
+                <button class="tab-btn" data-tab="analytics" onclick="showAnalytics()">📊 Analytics</button>
+            </div>
+
+            <div id="live-feed" class="grid">
+                <p>Waiting for network data...</p>
+            </div>
+            
+            <div id="analytics-view">
+                <h2 style="text-align:center;">Network Impact Overview</h2>
+                <p style="text-align:center; color: #666;">Data generated directly from Firebase</p>
+                <div class="chart-container">
+                    <canvas id="impactChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, where, doc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // 1. PASTE YOUR KEYS HERE
+       const firebaseConfig = {
+  apiKey: "AIzaSyCCos4OkUmeu9SDuVoxgsV3QXQyWCf2BAI",
+  authDomain: "streetconnect-e4161.firebaseapp.com",
+  projectId: "streetconnect-e4161",
+  storageBucket: "streetconnect-e4161.firebasestorage.app",
+  messagingSenderId: "918243079734",
+  appId: "1:918243079734:web:689e60216d070593940a97"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        let currentUser = { name: "", type: "", location: "" };
+        let unsubscribe = null;
+        let myChart = null; 
+
+        // ==========================================
+        // THE RADIUS MAP (Geofencing Logic)
+        // This defines which locations are allowed to be seen based on your base location
+        // ==========================================
+        const proximityMap = {
+            "Chandapura Circle": ["Chandapura Circle", "Bommasandra Industrial Area", "Attibele Toll Plaza", "Jigani APC Circle", "Electronic City Phase 2"],
+            "Bommasandra Industrial Area": ["Bommasandra Industrial Area", "Chandapura Circle", "Electronic City Phase 1", "Electronic City Phase 2", "Jigani APC Circle"],
+            "Electronic City Phase 1": ["Electronic City Phase 1", "Electronic City Phase 2", "Bommasandra Industrial Area", "Silk Board Junction"],
+            "Electronic City Phase 2": ["Electronic City Phase 2", "Electronic City Phase 1", "Bommasandra Industrial Area", "Chandapura Circle"],
+            "Attibele Toll Plaza": ["Attibele Toll Plaza", "Chandapura Circle"],
+            "Jigani APC Circle": ["Jigani APC Circle", "Bommasandra Industrial Area", "Chandapura Circle"],
+            "Silk Board Junction": ["Silk Board Junction", "HSR Layout Sector 1", "Madiwala Market", "Electronic City Phase 1", "Koramangala BDA Complex"],
+            "HSR Layout Sector 1": ["HSR Layout Sector 1", "Silk Board Junction", "Koramangala BDA Complex", "Madiwala Market"],
+            "Madiwala Market": ["Madiwala Market", "Silk Board Junction", "Koramangala BDA Complex", "HSR Layout Sector 1"],
+            "Koramangala BDA Complex": ["Koramangala BDA Complex", "HSR Layout Sector 1", "Madiwala Market", "Silk Board Junction"]
+        };
+
+        // --- LOGIN LOGIC ---
+        document.getElementById('start-btn').addEventListener('click', () => {
+            currentUser.name = document.getElementById('user-name').value;
+            currentUser.type = document.getElementById('user-type').value;
+            currentUser.location = document.getElementById('user-location').value;
+            
+            if (!currentUser.name) return alert("Please enter your name!");
+            
+            if(currentUser.type === "Donor") {
+                document.getElementById('history-tab').style.display = "block";
+            }
+
+            document.getElementById('welcome-msg').innerText = `${currentUser.type} Portal: ${currentUser.name} | Base: ${currentUser.location}`;
+            document.getElementById('profile-section').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            
+            switchTab('pending');
+        });
+
+        // --- TAB SWITCHING & FEED LOGIC ---
+        window.switchTab = (tabName) => {
+            document.getElementById('analytics-view').style.display = 'none';
+            document.getElementById('live-feed').style.display = 'grid';
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            const feedDiv = document.getElementById('live-feed');
+            feedDiv.innerHTML = "<p>Loading records...</p>";
+            if (unsubscribe) unsubscribe(); 
+
+            let q;
+            if (tabName === 'special') {
+                q = query(collection(db, "HelpRequests"), where("isPriority", "==", true));
+            } else if (tabName === 'history') {
+                q = query(collection(db, "HelpRequests"), where("acceptedBy", "==", currentUser.name));
+            } else {
+                q = query(collection(db, "HelpRequests"), where("status", "==", tabName));
+            }
+
+            unsubscribe = onSnapshot(q, (snapshot) => {
+                feedDiv.innerHTML = "";
+                let cardsAdded = 0; // Keep track if we actually show anything
+
+                snapshot.forEach((documentSnapshot) => {
+                    const data = documentSnapshot.data();
+                    const docId = documentSnapshot.id;
+                    
+                    // ==========================================
+                    // THE GEOFENCE BOUNCER
+                    // If the tab is "pending", only show it if the request's location 
+                    // is inside the Donor's specific Radius Map array.
+                    // ==========================================
+                    if (tabName === 'pending') {
+                        const allowedLocations = proximityMap[currentUser.location] || [currentUser.location];
+                        if (!allowedLocations.includes(data.location)) {
+                            return; // Skip drawing this card entirely!
+                        }
+                    }
+                    
+                    const isExactMatch = (data.location === currentUser.location) && (tabName === 'pending');
+                    const nearBadge = isExactMatch ? `<span class="badge proximity">📍 EXACT MATCH: Your Base Location</span>` : '';
+                    const specialBadge = data.isPriority ? `<span class="badge priority">⚠️ HIGH REPEAT AREA: Suggest Shelter / Old Age Home Relocation</span>` : '';
+                    const mapsLink = `https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(data.location + " Bengaluru")}`;
+
+                    let cardHTML = `
+                        <div class="request-card">
+                            ${specialBadge}
+                            ${nearBadge}
+                            <div class="location">${data.location}</div>
+                            <a href="${mapsLink}" target="_blank" class="btn btn-maps">🗺️ Open in Google Maps</a>
+                            <img src="${data.imageBase64}" alt="Privacy Masked Image">
+                    `;
+
+                    if (data.status === 'pending') {
+                        cardHTML += `<button class="btn btn-main" onclick="updateStatus('${docId}', 'accepted')">I Will Accept This Request</button>`;
+                    } else if (data.status === 'accepted') {
+                        cardHTML += `<button class="btn btn-success" onclick="updateStatus('${docId}', 'delivered')">Mark as Delivered</button>`;
+                        cardHTML += `<p style="font-size:0.9em; text-align:center; margin-top:10px;">Accepted by: ${data.acceptedBy}</p>`;
+                    } else if (data.status === 'delivered') {
+                        cardHTML += `<p style="font-weight:bold; color:var(--success); text-align:center;">Delivered successfully by ${data.acceptedBy}</p>`;
+                    }
+                    
+                    cardHTML += `</div>`;
+                    feedDiv.innerHTML += cardHTML;
+                    cardsAdded++;
+                });
+
+                // If the geofence blocked everything, show a nice message
+                if(cardsAdded === 0) {
+                    feedDiv.innerHTML = `<p>No active requests in your area right now. Thank you for being on standby!</p>`;
+                }
+            });
+        };
+
+        // --- UPDATE STATUS LOGIC ---
+        window.updateStatus = async (docId, newStatus) => {
+            try {
+                await updateDoc(doc(db, "HelpRequests", docId), { 
+                    status: newStatus,
+                    acceptedBy: currentUser.name 
+                });
+            } catch (error) { console.error(error); alert("Database Error."); }
+        };
+
+        // --- ANALYTICS DASHBOARD LOGIC ---
+        window.showAnalytics = async () => {
+            if (unsubscribe) unsubscribe();
+            document.getElementById('live-feed').style.display = 'none';
+            document.getElementById('analytics-view').style.display = 'block';
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-tab="analytics"]`).classList.add('active');
+
+            const querySnapshot = await getDocs(collection(db, "HelpRequests"));
+            let pendingCount = 0; let acceptedCount = 0; let deliveredCount = 0;
+
+            querySnapshot.forEach((doc) => {
+                const status = doc.data().status;
+                if(status === 'pending') pendingCount++;
+                if(status === 'accepted') acceptedCount++;
+                if(status === 'delivered') deliveredCount++;
+            });
+
+            const ctx = document.getElementById('impactChart').getContext('2d');
+            if(myChart) myChart.destroy(); 
+            
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'In Transit', 'Successfully Delivered'],
+                    datasets: [{
+                        data: [pendingCount, acceptedCount, deliveredCount],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#22c55e']
+                    }]
+                }
+            });
+        };
+    </script>
+
+  </body>
+</html>
