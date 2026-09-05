@@ -2,6 +2,7 @@
 > **Intelligent Surplus Distribution & Sheltering Network**
 
 StreetConnect Protocol is a zero-digital-literacy IoT solution designed to bridge the gap between homeless individuals needing immediate assistance and local donors/NGOs. Using an ESP32 edge device with a street button, real-time geolocation alerts are dispatched to nearby aid providers.
+![Street connect hardware](doc/project hardware.png)
 
 ## 🛠️ Project Features
 * **Zero-Literacy Hardware Node**: Single push-button operation, piezo buzzer audio feedback, and visual LED status indicators (Blue: Processing, Green: Dispatched, Red: Standby).
